@@ -5,11 +5,6 @@
 #include <ctime>
 using namespace std;
 
-struct Piece {
-    char type;
-    int x, y;
-};
-
 void matrix_sequence(int M, int N) {
     cout << "\nМатрица с возрастающей последовательностью:\n";
     vector<vector<int>> matrix(M, vector<int>(N));
@@ -71,54 +66,32 @@ void matrix_unuque(int M, int N) {
     }
 }
 
-int SIZE = 8;
+const int SIZE = 8;
 
-bool isAttackingKing(const Piece& piece, int kingX, int kingY, const vector<vector<char>>& board) {
-    if (piece.type == 'Q') {
-        int dx[] = {0, 1, 1, -1, -1, 0, 1, -1};
-        int dy[] = {1, 0, 1, 1, 0, -1, -1, -1};
-        for (int dir = 0; dir < 8; ++dir) {
-            int nx = piece.x + dx[dir], ny = piece.y + dy[dir];
-            while (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE) {
-                if (board[nx][ny] != '.' && !(nx == kingX && ny == kingY)) break;
-                if (nx == kingX && ny == kingY) return true;
-                nx += dx[dir];
-                ny += dy[dir];
-            }
-        }
-    } else if (piece.type == 'N') {
-        int dx[] = {-2, -1, 1, 2, 2, 1, -1, -2};
-        int dy[] = {1, 2, 2, 1, -1, -2, -2, -1};
-        for (int i = 0; i < 8; ++i) {
-            int nx = piece.x + dx[i], ny = piece.y + dy[i];
-            if (nx == kingX && ny == kingY)
-                return true;
-        }
-    }
-    return false;
+bool isQueenAttacking(int queenX, int queenY, int kingX, int kingY) {
+    return (queenX == kingX || queenY == kingY ||
+           abs(queenX - kingX) == abs(queenY - kingY));
 }
 
 void chess_board() {
     vector<vector<char>> board(SIZE, vector<char>(SIZE, '.'));
-    vector<Piece> pieces;
+    vector<pair<int, int>> queens;
     srand(time(0) + 2);
 
     int kingX = rand() % SIZE;
     int kingY = rand() % SIZE;
     board[kingX][kingY] = 'K';
+    cout << "Король расположен на: (" << kingX << ", " << kingY << ")\n";
 
-    int numQueens = 4 + rand() % 5;
-    int numKnights = 2 + rand() % 5;
-
-    for (int i = 0; i < numQueens + numKnights; i++) {
-        char type = (i < numQueens) ? 'Q' : 'N';
+    int numQueens = 2 + rand() % 4;
+    for (int i = 0; i < numQueens; i++) {
         int x, y;
         do {
             x = rand() % SIZE;
             y = rand() % SIZE;
         } while (board[x][y] != '.');
-        board[x][y] = type;
-        pieces.push_back({type, x, y});
+        board[x][y] = 'Q';
+        queens.emplace_back(x, y);
     }
 
     cout << "\nШахматная доска:\n";
@@ -128,15 +101,17 @@ void chess_board() {
         cout << endl;
     }
 
-    cout << "\nФигуры, атакующие короля:\n";
-    for (auto& piece : pieces) {
-        if (isAttackingKing(piece, kingX, kingY, board)) {
-            string name;
-            if (piece.type == 'Q') name = "Ферзь";
-            else if (piece.type == 'N') name = "Конь";
-            else name = "Фигура";
-            cout << name << " на (" << piece.x << "," << piece.y << ")\n";
+    cout << "\nФерзи, атакующие короля:\n";
+    bool found = false;
+    for (auto &queen : queens) {
+        if (isQueenAttacking(queen.first, queen.second, kingX, kingY)) {
+            cout << "Ферзь на (" << queen.first << "," << queen.second << ")\n";
+            found = true;
         }
+    }
+    
+    if (!found) {
+        cout << "Нет ферзей, атакующих короля.\n";
     }
 }
 
