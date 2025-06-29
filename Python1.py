@@ -1,10 +1,11 @@
 import random
-import time
-from collections import Counter
+from typing import List, Tuple, Dict
 
-def matrix_sequence(M, N):
+
+def matrix_sequence(M: int, N: int) -> None:
     print("\nМатрица с возрастающей последовательностью:")
     matrix = [[random.randint(0, 100) for _ in range(N)] for _ in range(M)]
+
     for row in matrix:
         print("\t".join(map(str, row)))
 
@@ -13,95 +14,89 @@ def matrix_sequence(M, N):
 
     for row in matrix:
         curr_seq = [row[0]]
-        for j in range(1, N):
-            if row[j] > curr_seq[-1]:
-                curr_seq.append(row[j])
+        for num in row[1:]:
+            if num > curr_seq[-1]:
+                curr_seq.append(num)
             else:
                 if curr_seq[0] < min_start or (curr_seq[0] == min_start and len(curr_seq) > len(best_seq)):
-                    best_seq = curr_seq[:]
                     min_start = curr_seq[0]
-                curr_seq = [row[j]]
+                    best_seq = curr_seq.copy()
+                curr_seq = [num]
+
         if curr_seq[0] < min_start or (curr_seq[0] == min_start and len(curr_seq) > len(best_seq)):
-            best_seq = curr_seq[:]
             min_start = curr_seq[0]
+            best_seq = curr_seq.copy()
 
     print("\nНаилучшая возрастающая последовательность:", " ".join(map(str, best_seq)))
 
-def matrix_unuque(M, N):
+
+def matrix_unique(M: int, N: int) -> None:
     print("\nМатрица с уникальными элементами:")
     matrix = [[random.randint(-50, 50) for _ in range(N)] for _ in range(M)]
+    freq = {}
+
     for row in matrix:
         print("\t".join(map(str, row)))
-
-    flat = [elem for row in matrix for elem in row]
-    freq = Counter(flat)
+        for num in row:
+            freq[num] = freq.get(num, 0) + 1
 
     print("\nКоличество повторений элементов:")
-    for value, count in sorted(freq.items()):
-        print(f"{value}: {count}")
+    for num, count in sorted(freq.items()):
+        print(f"{num}: {count}")
 
 
 SIZE = 8
 
-def is_attacking_king(piece, king_x, king_y, board):
-    x, y = piece['x'], piece['y']
-    t = piece['type']
-    if t == 'Q':
-        directions = [(0,1), (1,0), (1,1), (-1,1), (-1,0), (0,-1), (1,-1), (-1,-1)]
-        for dx, dy in directions:
-            nx, ny = x + dx, y + dy
-            while 0 <= nx < SIZE and 0 <= ny < SIZE:
-                if board[nx][ny] != '.' and (nx != king_x or ny != king_y):
-                    break
-                if nx == king_x and ny == king_y:
-                    return True
-                nx += dx
-                ny += dy
-    elif t == 'N':
-        moves = [(-2,1), (-1,2), (1,2), (2,1), (2,-1), (1,-2), (-1,-2), (-2,-1)]
-        for dx, dy in moves:
-            nx, ny = x + dx, y + dy
-            if 0 <= nx < SIZE and 0 <= ny < SIZE and nx == king_x and ny == king_y:
-                return True
-    return False
 
-def chess_board():
+def is_queen_attacking(queen_pos: Tuple[int, int], king_pos: Tuple[int, int]) -> bool:
+    queen_x, queen_y = queen_pos
+    king_x, king_y = king_pos
+    return (queen_x == king_x or queen_y == king_y or
+            abs(queen_x - king_x) == abs(queen_y - king_y))
+
+
+def chess_board() -> None:
     board = [['.' for _ in range(SIZE)] for _ in range(SIZE)]
-    pieces = []
+    queens = []
+    random.seed()
 
-    king_x = random.randint(0, SIZE-1)
-    king_y = random.randint(0, SIZE-1)
+    king_x, king_y = random.randint(0, SIZE - 1), random.randint(0, SIZE - 1)
     board[king_x][king_y] = 'K'
+    print(f"Король расположен на: ({king_x}, {king_y})")
 
-    num_queens = 4 + random.randint(0, 4)
-    num_knights = 2 + random.randint(0, 4)
-
-    total_pieces = num_queens + num_knights
-    types = ['Q'] * num_queens + ['N'] * num_knights
-
-    for t in types:
+    num_queens = random.randint(2, 5)
+    for _ in range(num_queens):
         while True:
-            x, y = random.randint(0, SIZE-1), random.randint(0, SIZE-1)
+            x, y = random.randint(0, SIZE - 1), random.randint(0, SIZE - 1)
             if board[x][y] == '.':
-                board[x][y] = t
-                pieces.append({'type': t, 'x': x, 'y': y})
+                board[x][y] = 'Q'
+                queens.append((x, y))
                 break
 
     print("\nШахматная доска:")
     for row in board:
         print(" ".join(row))
 
-    print("\nФигуры, атакующие короля:")
-    for piece in pieces:
-        if is_attacking_king(piece, king_x, king_y, board):
-            name = "Ферзь" if piece['type'] == 'Q' else "Конь"
-            print(f"{name} на ({piece['x']},{piece['y']})")
+    print("\nФерзи, атакующие короля:")
+    attacking_queens = [q for q in queens if is_queen_attacking(q, (king_x, king_y))]
+
+    if attacking_queens:
+        for q in attacking_queens:
+            print(f"Ферзь на ({q[0]}, {q[1]})")
+    else:
+        print("Нет ферзей, атакующих короля.")
 
 
-M = int(input("Введите количество строк: "))
-N = int(input("Введите количество столбцов: "))
+try:
+    M = int(input("Введите количество строк: "))
+    N = int(input("Введите количество столбцов: "))
 
-random.seed(time.time())
-matrix_sequence(M, N)
-matrix_unuque(M, N)
-chess_board()
+    if M < 2 or M > 10 or N < 2 or N > 10:
+        print("Размеры матрицы должны быть от 2 до 10")
+    else:
+        random.seed()
+        matrix_sequence(M, N)
+        matrix_unique(M, N)
+        chess_board()
+except ValueError:
+    print("Ошибка: введите целые числа")
